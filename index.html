@@ -3,19 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Jornada do Byte</title>
+    <title>A Jornada do Byte - V2.0</title>
     
-    <!-- O ESTILO (CSS) VEM AQUI DENTRO DA TAG STYLE -->
     <style>
-        /* Reseta as margens do navegador */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #1a1a1a;
+            background-color: #0d0d1a;
             color: white;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
@@ -23,344 +16,107 @@
             align-items: center;
             height: 100vh;
         }
-
         #game-container {
-            position: relative; /* Para que o HUD e o Overlay fiquem por cima do Canvas */
+            position: relative;
             width: 800px;
             height: 400px;
-            border: 4px solid #333;
-            box-shadow: 0 0 20px rgba(0,255,0,0.2);
+            border: 4px solid #4CAF50;
+            box-shadow: 0 0 30px rgba(76, 175, 80, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
         }
-
-        #gameCanvas {
-            background-color: #2b2b2b;
-            display: block;
-        }
-
-        /* Painel de Pontos e Vidas no topo */
+        #gameCanvas { display: block; }
+        
         #hud {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 20px;
-            font-weight: bold;
-            pointer-events: none; /* Para não atrapalhar os cliques no jogo */
+            top: 10px; left: 15px; right: 15px;
+            display: flex; justify-content: space-between;
+            font-size: 18px; font-weight: bold;
+            text-shadow: 2px 2px 2px black;
+            pointer-events: none;
         }
-
-        /* Tela escura de vitória/derrota */
+        .hud-item { color: #00ffcc; }
+        
         #overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-
-        #overlay.hidden {
-            display: none;
-        }
-
-        #overlay h1 {
-            font-size: 40px;
-            margin-bottom: 20px;
-        }
-
+        #overlay.hidden { display: none; }
+        #overlay h1 { font-size: 40px; margin-bottom: 20px; text-shadow: 0 0 10px currentColor; }
+        
         button {
-            padding: 10px 20px;
-            font-size: 18px;
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
+            padding: 12px 25px; font-size: 18px; font-family: 'Courier New', Courier, monospace;
+            background-color: #00ffcc; color: #000; font-weight: bold;
+            border: none; cursor: pointer; border-radius: 5px; box-shadow: 0 0 10px #00ffcc;
         }
-
-        button:hover {
-            background-color: #45a049;
-        }
+        button:hover { background-color: #00ccaa; }
     </style>
 </head>
 <body>
 
-    <!-- A ESTRUTURA DO JOGO (HTML) VEM AQUI -->
     <div id="game-container">
-        <!-- Telas de Interface (UI) -->
+        <!-- Interface Superior -->
         <div id="hud">
-            <span>Pontos: <span id="scoreDisplay">0</span></span>
-            <span>Vidas: <span id="livesDisplay">3</span></span>
+            <span class="hud-item">Fase: <span id="levelDisplay">1</span>/5</span>
+            <span class="hud-item">Dados: <span id="coinsDisplay">0/0</span></span>
+            <span class="hud-item">Vidas: <span id="livesDisplay">3</span></span>
+            <span class="hud-item" style="color: gold;">Score: <span id="scoreDisplay">0</span></span>
         </div>
 
-        <!-- Tela do Jogo -->
         <canvas id="gameCanvas" width="800" height="400"></canvas>
 
-        <!-- Telas de Fim de Jogo (Escondidas por padrão) -->
+        <!-- Telas de Mensagem -->
         <div id="overlay" class="hidden">
-            <h1 id="overlayMessage">Você Venceu!</h1>
-            <button id="restartBtn">Reiniciar Sistema</button>
+            <h1 id="overlayMessage">Sistema Restaurado!</h1>
+            <button id="restartBtn">Reiniciar Jogo</button>
         </div>
     </div>
 
-    <!-- O CÉREBRO DO JOGO (JAVASCRIPT) VEM AQUI DENTRO DA TAG SCRIPT -->
     <script>
-        // ==========================================
-        // 1. CONFIGURAÇÕES INICIAIS
-        // ==========================================
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Interface do usuário (HTML)
+        // Elementos UI
         const scoreDisplay = document.getElementById("scoreDisplay");
         const livesDisplay = document.getElementById("livesDisplay");
+        const levelDisplay = document.getElementById("levelDisplay");
+        const coinsDisplay = document.getElementById("coinsDisplay");
         const overlay = document.getElementById("overlay");
         const overlayMessage = document.getElementById("overlayMessage");
         const restartBtn = document.getElementById("restartBtn");
 
-        // Variáveis de Estado do Jogo
+        // Status Geral
         let score = 0;
         let lives = 3;
+        let currentLevel = 0; // Vai de 0 a 4 (Fases 1 a 5)
         let gameOver = false;
         let gameWon = false;
-        let animationId; // Para parar a animação quando o jogo acabar
+        let animationId;
+        let time = 0; // Usado para animações (pulsar)
 
-        // Controle do Teclado
+        // Jogador
+        const player = {
+            x: 0, y: 0, w: 20, h: 20,
+            speed: 5, vx: 0, vy: 0,
+            jumpPower: -10, gravity: 0.5, grounded: false,
+            facingRight: true // Para desenhar o olhinho
+        };
+
         const keys = { right: false, left: false, up: false };
 
         document.addEventListener("keydown", (e) => {
-            if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
-            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
-            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.key === " ") keys.up = true;
+            if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") { keys.right = true; player.facingRight = true; }
+            if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") { keys.left = true; player.facingRight = false; }
+            if (e.key === "ArrowUp" || e.key.toLowerCase() === "w" || e.key === " ") keys.up = true;
         });
-
         document.addEventListener("keyup", (e) => {
-            if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
-            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
-            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.key === " ") keys.up = false;
+            if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") keys.right = false;
+            if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") keys.left = false;
+            if (e.key === "ArrowUp" || e.key.toLowerCase() === "w" || e.key === " ") keys.up = false;
         });
 
-        // ==========================================
-        // 2. OBJETOS DO JOGO
-        // ==========================================
-
-        // O Protagonista (Byte)
-        const player = {
-            x: 50, y: 300, w: 20, h: 20,
-            speed: 4, vx: 0, vy: 0,
-            jumpPower: -10,
-            gravity: 0.5,
-            grounded: false
-        };
-
-        // O Portal de Vitória (Processador)
-        const goal = { x: 730, y: 50, w: 40, h: 50 };
-
-        // Plataformas, Moedas e Inimigos
-        let platforms = [];
-        let coins = [];
-        let enemies = [];
-
-        // Função para montar (ou resetar) a fase
-        function initLevel() {
-            platforms = [
-                { x: 0, y: 380, w: 800, h: 20 },   // Chão principal
-                { x: 150, y: 300, w: 100, h: 10 }, // Plataforma 1
-                { x: 300, y: 220, w: 100, h: 10 }, // Plataforma 2
-                { x: 450, y: 150, w: 100, h: 10 }, // Plataforma 3
-                { x: 650, y: 100, w: 150, h: 10 }  // Plataforma do Portal
-            ];
-
-            coins = [
-                { x: 190, y: 270, w: 15, h: 15, collected: false },
-                { x: 340, y: 190, w: 15, h: 15, collected: false },
-                { x: 490, y: 120, w: 15, h: 15, collected: false }
-            ];
-
-            enemies = [
-                { x: 350, y: 360, w: 20, h: 20 },
-                { x: 500, y: 360, w: 20, h: 20 }
-            ];
-        }
-
-        // ==========================================
-        // 3. FÍSICA E LÓGICA
-        // ==========================================
-
-        // Verifica colisão entre dois retângulos genéricos
-        function checkCollision(r1, r2) {
-            return (
-                r1.x < r2.x + r2.w &&
-                r1.x + r1.w > r2.x &&
-                r1.y < r2.y + r2.h &&
-                r1.y + r1.h > r2.y
-            );
-        }
-
-        function update() {
-            if (gameOver || gameWon) return;
-
-            // Movimentação horizontal
-            if (keys.right) player.vx = player.speed;
-            else if (keys.left) player.vx = -player.speed;
-            else player.vx = 0; 
-
-            // Pulo
-            if (keys.up && player.grounded) {
-                player.vy = player.jumpPower;
-                player.grounded = false;
-            }
-
-            // Aplica gravidade no eixo Y
-            player.vy += player.gravity;
-
-            // Atualiza posição
-            player.x += player.vx;
-            player.y += player.vy;
-
-            // Limites da tela
-            if (player.x < 0) player.x = 0;
-            if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
-
-            // Colisão com Plataformas
-            player.grounded = false;
-            for (let p of platforms) {
-                if (checkCollision(player, p)) {
-                    if (player.vy > 0 && player.y + player.h - player.vy <= p.y) {
-                        player.grounded = true;
-                        player.vy = 0;
-                        player.y = p.y - player.h;
-                    }
-                }
-            }
-
-            // Colisão com Moedas (Fragmentos)
-            for (let c of coins) {
-                if (!c.collected && checkCollision(player, c)) {
-                    c.collected = true;
-                    score += 10;
-                    scoreDisplay.innerText = score;
-                }
-            }
-
-            // Colisão com Inimigos (Bugs)
-            for (let e of enemies) {
-                if (checkCollision(player, e)) {
-                    loseLife();
-                }
-            }
-
-            // Colisão com o Portal (Vitória)
-            if (checkCollision(player, goal)) {
-                gameWon = true;
-                showOverlay("Você Restaurou o Sistema!", "#4CAF50");
-            }
-
-            // Se cair no buraco
-            if (player.y > canvas.height) {
-                loseLife();
-            }
-        }
-
-        function loseLife() {
-            lives--;
-            livesDisplay.innerText = lives;
-            
-            if (lives <= 0) {
-                gameOver = true;
-                showOverlay("FALHA CRÍTICA (Game Over)", "#f44336");
-            } else {
-                player.x = 50;
-                player.y = 300;
-                player.vx = 0;
-                player.vy = 0;
-            }
-        }
-
-        function showOverlay(msg, color) {
-            overlayMessage.innerText = msg;
-            overlayMessage.style.color = color;
-            overlay.classList.remove("hidden");
-        }
-
-        // ==========================================
-        // 4. DESENHO (RENDERIZAÇÃO)
-        // ==========================================
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Desenha o Portal (Verde)
-            ctx.fillStyle = "lime";
-            ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
-
-            // Desenha as Plataformas (Cinza)
-            ctx.fillStyle = "#888";
-            for (let p of platforms) {
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-            }
-
-            // Desenha as Moedas (Amarelas)
-            ctx.fillStyle = "gold";
-            for (let c of coins) {
-                if (!c.collected) {
-                    ctx.beginPath();
-                    ctx.arc(c.x + c.w/2, c.y + c.h/2, c.w/2, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-
-            // Desenha os Inimigos (Vermelhos)
-            ctx.fillStyle = "red";
-            for (let e of enemies) {
-                ctx.fillRect(e.x, e.y, e.w, e.h);
-            }
-
-            // Desenha o Jogador/Byte (Azul)
-            ctx.fillStyle = "cyan";
-            ctx.fillRect(player.x, player.y, player.w, player.h);
-        }
-
-        // ==========================================
-        // 5. LOOP PRINCIPAL DO JOGO
-        // ==========================================
-        function gameLoop() {
-            update();
-            draw();
-            
-            if (!gameOver && !gameWon) {
-                animationId = requestAnimationFrame(gameLoop);
-            }
-        }
-
-        // Botão de reiniciar
-        restartBtn.addEventListener("click", () => {
-            score = 0;
-            lives = 3;
-            gameOver = false;
-            gameWon = false;
-            scoreDisplay.innerText = score;
-            livesDisplay.innerText = lives;
-            overlay.classList.add("hidden");
-            
-            player.x = 50;
-            player.y = 300;
-            player.vx = 0;
-            player.vy = 0;
-            
-            initLevel();
-            cancelAnimationFrame(animationId);
-            gameLoop();
-        });
-
-        // Inicia o jogo
-        initLevel();
-        gameLoop();
-    </script>
-</body>
-</html>
+        // Configuração das 5 Fases
+        const levelData = [
+            { // FASE 1: Aprender a pular
+                start: { x: 50, y: 300 }, goal: { x: 700, y: 3
