@@ -282,6 +282,7 @@
             overlay.classList.remove("hidden");
         }
 
+        // Função auxiliar para desenhar retângulos com cantos arredondados
         function fillRoundRect(x, y, w, h, r) {
             ctx.beginPath();
             ctx.moveTo(x + r, y);
@@ -296,6 +297,7 @@
         function drawBackground() {
             const isLavaLevel = currentLevel >= 3;
 
+            // 1. Gradiente principal do céu/sistema
             const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
             if (isLavaLevel) {
                 bgGrad.addColorStop(0, "#140306");
@@ -309,6 +311,7 @@
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // 2. Silhuetas de servidores/estruturas ao fundo
             for (let i = 0; i < bgTowers.length; i++) {
                 const t = bgTowers[i];
                 const topY = canvas.height - t.h;
@@ -329,6 +332,7 @@
                 }
             }
 
+            // 3. Grade Cyberpunk ao fundo
             ctx.strokeStyle = isLavaLevel ? "rgba(255, 80, 20, 0.08)" : "rgba(0, 255, 204, 0.06)";
             ctx.lineWidth = 1;
             for (let i = 0; i < 800; i += 40) {
@@ -338,6 +342,7 @@
                 ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(800, j); ctx.stroke();
             }
 
+            // 4. Partículas animadas
             for (let p of bgParticles) {
                 p.y -= isLavaLevel ? p.speed * 1.4 : p.speed * 0.6;
                 p.x += Math.sin(time * 0.3 + p.y * 0.05) * 0.3;
@@ -358,6 +363,7 @@
                 }
             }
 
+            // 5. Brilho de calor na parte inferior (Fases 4 e 5)
             if (isLavaLevel) {
                 const pulseGlow = 0.25 + Math.abs(Math.sin(time * 0.4)) * 0.15;
                 const lavaGlow = ctx.createLinearGradient(0, 300, 0, 400);
@@ -368,6 +374,7 @@
             }
         }
 
+        // NOVO PERSONAGEM: Bonequinho fofo estilo chibi com capuz de orelhinhas e cachecol
         function drawPlayer() {
             const cx = player.x + player.w / 2;
             const bottomY = player.y + player.h;
@@ -375,6 +382,7 @@
             const isMoving = Math.abs(player.vx) > 0.1;
             const runCycle = isMoving ? time * 2.8 : 0;
 
+            // Pulo/balanço suave do corpo ao andar ou respirar parado
             const bob = player.grounded
                 ? (isMoving ? Math.abs(Math.sin(runCycle)) * 2 : Math.sin(time * 0.8) * 0.8)
                 : 0;
@@ -384,6 +392,7 @@
             const headBottom = torsoTop + 2;
             const headTop = headBottom - 15;
 
+            // 1. Cachecol esvoaçante atrás do personagem
             const scarfWave = Math.sin(time * 2.2) * 2.5;
             const scarfLen = isMoving ? 13 : 8;
             ctx.fillStyle = "#ff4d6d";
@@ -401,51 +410,63 @@
             ctx.closePath();
             ctx.fill();
 
+            // 2. Bracinho de trás
             const backArmSwing = !player.grounded ? -5 : (isMoving ? -Math.sin(runCycle) * 4 : 0);
             ctx.fillStyle = "#d9e2ec";
             fillRoundRect(cx + dir * 2 - 2, torsoTop + 2 + backArmSwing * 0.3, 4, 6, 2);
 
+            // 3. Perninhas e botinhas animadas
             const legSwing = player.grounded ? (isMoving ? Math.sin(runCycle) * 4 : 0) : 3;
             const leftLift = player.grounded && isMoving ? Math.max(0, Math.cos(runCycle)) * 2.5 : 0;
             const rightLift = player.grounded && isMoving ? Math.max(0, -Math.cos(runCycle)) * 2.5 : (player.grounded ? 0 : 2);
 
+            // Botinha 1
             ctx.fillStyle = "#2b2d42";
             fillRoundRect(cx - 6 - legSwing, bottomY - 5 - leftLift, 5.5, 5, 2);
-            ctx.fillStyle = "#ffd166";
+            ctx.fillStyle = "#ffd166"; // Detalhe dourado na ponta da bota
             ctx.fillRect(cx - 6 - legSwing + (dir > 0 ? 3 : 0), bottomY - 2 - leftLift, 2.5, 2);
 
+            // Botinha 2
             ctx.fillStyle = "#2b2d42";
             fillRoundRect(cx + 0.5 + legSwing, bottomY - 5 - rightLift, 5.5, 5, 2);
             ctx.fillStyle = "#ffd166";
             ctx.fillRect(cx + 0.5 + legSwing + (dir > 0 ? 3 : 0), bottomY - 2 - rightLift, 2.5, 2);
 
+            // 4. Corpinho (Casaco/Moletom branco fofo)
             ctx.fillStyle = "#ffffff";
             fillRoundRect(cx - 7, torsoTop, 14, 11, 4);
 
+            // Gola do cachecol vermelho no pescoço
             ctx.fillStyle = "#ff4d6d";
             fillRoundRect(cx - 7.5, torsoTop - 1, 15, 3.5, 1.5);
 
+            // 5. Orelhinhas fofas no topo do capuz
             const earTilt = isMoving ? -dir * 2.5 : Math.sin(time * 0.8) * 0.6;
+            // Orelha esquerda
             ctx.fillStyle = "#ffffff";
             fillRoundRect(cx - 6.5 + earTilt * 0.5, headTop - 6, 4.5, 8, 2.2);
-            ctx.fillStyle = "#ff8fa3";
+            ctx.fillStyle = "#ff8fa3"; // Interior rosado
             fillRoundRect(cx - 5.3 + earTilt * 0.5, headTop - 4.5, 2.2, 5, 1);
 
+            // Orelha direita
             ctx.fillStyle = "#ffffff";
             fillRoundRect(cx + 2 + earTilt * 0.5, headTop - 6, 4.5, 8, 2.2);
             ctx.fillStyle = "#ff8fa3";
             fillRoundRect(cx + 3.1 + earTilt * 0.5, headTop - 4.5, 2.2, 5, 1);
 
+            // 6. Cabecinha grande estilo Chibi (Capuz branco)
             ctx.fillStyle = "#ffffff";
             fillRoundRect(cx - 9.5, headTop, 19, 15, 7);
             ctx.strokeStyle = "#bde0fe";
             ctx.lineWidth = 1;
             ctx.stroke();
 
+            // 7. Rostinho fofo dentro do capuz
             const faceCenterX = cx + dir * 1.5;
             ctx.fillStyle = "#ffe5d9";
             fillRoundRect(faceCenterX - 6.5, headTop + 3.5, 13, 10, 4.5);
 
+            // 8. Olhinhos grandes expressivos (com piscada ocasional)
             const isBlinking = Math.sin(time * 0.35) > 0.96;
             const leftEyeX = faceCenterX - 4.2 + dir * 0.8;
             const rightEyeX = faceCenterX + 1.8 + dir * 0.8;
@@ -460,25 +481,30 @@
                 fillRoundRect(leftEyeX, eyeY, 2.6, 4.2, 1.2);
                 fillRoundRect(rightEyeX, eyeY, 2.6, 4.2, 1.2);
 
+                // Brilho branco nos olhos
                 ctx.fillStyle = "#ffffff";
                 ctx.fillRect(leftEyeX + 0.5, eyeY + 0.6, 1.2, 1.2);
                 ctx.fillRect(rightEyeX + 0.5, eyeY + 0.6, 1.2, 1.2);
             }
 
+            // 9. Bochechinhas rosadas e boquinha fofa
             ctx.fillStyle = "#ff758f";
             ctx.fillRect(leftEyeX - 1.2, eyeY + 4.3, 2.2, 1.3);
             ctx.fillRect(rightEyeX + 1.6, eyeY + 4.3, 2.2, 1.3);
 
+            // 10. Bracinho da frente com luvinha
             const frontArmSwing = !player.grounded ? -6 : (isMoving ? Math.sin(runCycle) * 4 : 0);
             ctx.fillStyle = "#ffffff";
             fillRoundRect(cx - dir * 2 - 2, torsoTop + 2 + frontArmSwing * 0.3, 4.2, 6, 2);
-            ctx.fillStyle = "#ff4d6d";
+            ctx.fillStyle = "#ff4d6d"; // Luvinha vermelha
             fillRoundRect(cx - dir * 2 - 2, torsoTop + 6 + frontArmSwing * 0.3, 4.2, 2.5, 1.2);
         }
 
         function draw() {
+            // Desenha o cenário dinâmico
             drawBackground();
 
+            // Portal
             let isPortalOpen = (coinsCollected === coinsTotal);
             ctx.fillStyle = isPortalOpen ? "#00ffcc" : "#662222";
             ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
@@ -487,12 +513,14 @@
                 ctx.strokeRect(goal.x + Math.sin(time) * 5, goal.y, goal.w, goal.h);
             }
 
+            // Plataformas
             for (let p of platforms) {
                 ctx.fillStyle = "#2b2b36"; ctx.fillRect(p.x, p.y, p.w, p.h);
                 ctx.fillStyle = currentLevel >= 3 ? "#ff8833" : "#00ffcc";
                 ctx.fillRect(p.x, p.y, p.w, 3);
             }
 
+            // Moedas (Pulsando)
             for (let c of coins) {
                 if (!c.collected) {
                     let pulse = Math.abs(Math.sin(time)) * 3;
@@ -507,6 +535,7 @@
                 }
             }
 
+            // Bugs / Lava (Inimigos)
             ctx.fillStyle = "#ff3333";
             for (let e of enemies) {
                 ctx.fillRect(e.x, e.y, e.w, e.h);
@@ -517,6 +546,7 @@
                 ctx.stroke();
             }
 
+            // Desenha o novo bonequinho
             drawPlayer();
         }
 
@@ -537,6 +567,7 @@
             gameLoop();
         });
 
+        // Start
         loadLevel();
         gameLoop();
     </script>
