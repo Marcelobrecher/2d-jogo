@@ -106,3 +106,439 @@
 
         // Torres de fundo para dar profundidade ao cenário
         const bgTowers = [
+            { x: 30, w: 70, h: 210 },
+            { x: 130, w: 50, h: 150 },
+            { x: 220, w: 90, h: 260 },
+            { x: 360, w: 60, h: 180 },
+            { x: 470, w: 100, h: 240 },
+            { x: 610, w: 55, h: 160 },
+            { x: 700, w: 80, h: 230 }
+        ];
+
+        // Jogador
+        const player = {
+            x: 0, y: 0, w: 20, h: 20,
+            speed: 5, vx: 0, vy: 0,
+            jumpPower: -10, gravity: 0.5, grounded: false,
+            facingRight: true
+        };
+
+        const keys = { right: false, left: false, up: false };
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") { keys.right = true; player.facingRight = true; }
+            if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") { keys.left = true; player.facingRight = false; }
+            if (e.key === "ArrowUp" || e.key.toLowerCase() === "w" || e.key === " ") keys.up = true;
+        });
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") keys.right = false;
+            if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") keys.left = false;
+            if (e.key === "ArrowUp" || e.key.toLowerCase() === "w" || e.key === " ") keys.up = false;
+        });
+
+        // Configuração das 5 Fases
+        const levelData = [
+            { // FASE 1: Aprender a pular
+                start: { x: 50, y: 300 }, goal: { x: 700, y: 330, w: 40, h: 50 },
+                platforms: [ { x: 0, y: 380, w: 800, h: 20 }, { x: 200, y: 310, w: 100, h: 10 }, { x: 400, y: 240, w: 100, h: 10 } ],
+                coins: [ { x: 240, y: 280, w: 15, h: 15 }, { x: 440, y: 210, w: 15, h: 15 } ],
+                enemies: []
+            },
+            { // FASE 2: Buracos e primeiros bugs
+                start: { x: 20, y: 300 }, goal: { x: 720, y: 150, w: 40, h: 50 },
+                platforms: [ { x: 0, y: 380, w: 200, h: 20 }, { x: 300, y: 380, w: 200, h: 20 }, { x: 550, y: 290, w: 100, h: 10 }, { x: 680, y: 200, w: 120, h: 10 } ],
+                coins: [ { x: 150, y: 350, w: 15, h: 15 }, { x: 350, y: 350, w: 15, h: 15 }, { x: 600, y: 250, w: 15, h: 15 } ],
+                enemies: [ { x: 400, y: 360, w: 20, h: 20 } ]
+            },
+            { // FASE 3: Zigue-zague
+                start: { x: 20, y: 100 }, goal: { x: 20, y: 330, w: 40, h: 50 },
+                platforms: [ { x: 0, y: 150, w: 150, h: 10 }, { x: 250, y: 200, w: 100, h: 10 }, { x: 500, y: 250, w: 100, h: 10 }, { x: 200, y: 320, w: 100, h: 10 }, { x: 0, y: 380, w: 150, h: 20 } ],
+                coins: [ { x: 290, y: 170, w: 15, h: 15 }, { x: 540, y: 220, w: 15, h: 15 }, { x: 240, y: 290, w: 15, h: 15 } ],
+                enemies: [ { x: 50, y: 130, w: 20, h: 20 } ]
+            },
+            { // FASE 4: Chão minado (Lava)
+                start: { x: 20, y: 300 }, goal: { x: 740, y: 50, w: 40, h: 50 },
+                platforms: [ { x: 0, y: 380, w: 100, h: 20 }, { x: 150, y: 300, w: 50, h: 10 }, { x: 250, y: 230, w: 50, h: 10 }, { x: 400, y: 180, w: 100, h: 10 }, { x: 550, y: 120, w: 50, h: 10 }, { x: 680, y: 100, w: 120, h: 10 } ],
+                coins: [ { x: 165, y: 270, w: 15, h: 15 }, { x: 265, y: 200, w: 15, h: 15 }, { x: 440, y: 150, w: 15, h: 15 } ],
+                enemies: [ { x: 100, y: 380, w: 800, h: 20 } ]
+            },
+            { // FASE 5: O Núcleo do Sistema (Lava)
+                start: { x: 20, y: 300 }, goal: { x: 380, y: 60, w: 40, h: 50 },
+                platforms: [ { x: 0, y: 380, w: 100, h: 20 }, { x: 150, y: 320, w: 60, h: 10 }, { x: 300, y: 320, w: 60, h: 10 }, { x: 450, y: 320, w: 60, h: 10 }, { x: 600, y: 320, w: 60, h: 10 }, { x: 700, y: 240, w: 80, h: 10 }, { x: 500, y: 165, w: 80, h: 10 }, { x: 350, y: 110, w: 100, h: 10 } ],
+                coins: [ { x: 170, y: 290, w: 15, h: 15 }, { x: 320, y: 290, w: 15, h: 15 }, { x: 470, y: 290, w: 15, h: 15 }, { x: 620, y: 290, w: 15, h: 15 }, { x: 730, y: 210, w: 15, h: 15 } ],
+                enemies: [ { x: 100, y: 380, w: 700, h: 20 }, { x: 530, y: 145, w: 20, h: 20 } ]
+            }
+        ];
+
+        let platforms, coins, enemies, goal, coinsTotal, coinsCollected;
+
+        function loadLevel() {
+            let data = levelData[currentLevel];
+            player.x = data.start.x; player.y = data.start.y;
+            player.vx = 0; player.vy = 0;
+            
+            platforms = JSON.parse(JSON.stringify(data.platforms));
+            coins = JSON.parse(JSON.stringify(data.coins)).map(c => ({...c, collected: false}));
+            enemies = JSON.parse(JSON.stringify(data.enemies));
+            goal = data.goal;
+            
+            coinsTotal = coins.length;
+            coinsCollected = 0;
+            
+            levelDisplay.innerText = currentLevel + 1;
+            updateHUD();
+        }
+
+        function checkCollision(r1, r2) {
+            return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
+        }
+
+        function updateHUD() {
+            scoreDisplay.innerText = score;
+            livesDisplay.innerText = lives;
+            coinsDisplay.innerText = `${coinsCollected}/${coinsTotal}`;
+        }
+
+        function update() {
+            if (gameOver || gameWon) return;
+            time += 0.1;
+
+            if (keys.right) player.vx = player.speed;
+            else if (keys.left) player.vx = -player.speed;
+            else player.vx = 0; 
+
+            if (keys.up && player.grounded) {
+                player.vy = player.jumpPower;
+                player.grounded = false;
+            }
+
+            // 1. Movimento horizontal (Eixo X)
+            player.x += player.vx;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+
+            for (let p of platforms) {
+                if (checkCollision(player, p)) {
+                    if (player.vx > 0) {
+                        player.x = p.x - player.w;
+                    } else if (player.vx < 0) {
+                        player.x = p.x + p.w;
+                    }
+                }
+            }
+
+            // 2. Gravidade e movimento vertical (Eixo Y)
+            player.vy += player.gravity;
+            player.y += player.vy;
+            player.grounded = false;
+
+            for (let p of platforms) {
+                if (checkCollision(player, p)) {
+                    if (player.vy > 0) {
+                        player.grounded = true;
+                        player.vy = 0;
+                        player.y = p.y - player.h;
+                    } else if (player.vy < 0) {
+                        player.vy = 0;
+                        player.y = p.y + p.h;
+                    }
+                }
+            }
+
+            for (let c of coins) {
+                if (!c.collected && checkCollision(player, c)) {
+                    c.collected = true; coinsCollected++; score += 50; updateHUD();
+                }
+            }
+
+            for (let e of enemies) if (checkCollision(player, e)) loseLife();
+            if (player.y > canvas.height) loseLife();
+
+            // Colisão com Portal
+            if (checkCollision(player, goal)) {
+                if (coinsCollected === coinsTotal) {
+                    if (currentLevel < levelData.length - 1) {
+                        currentLevel++; loadLevel(); score += 200;
+                    } else {
+                        gameWon = true; showOverlay("SISTEMA RESTAURADO!\nVocê salvou o PC!", "#00ffcc");
+                    }
+                }
+            }
+        }
+
+        function loseLife() {
+            lives--; updateHUD();
+            if (lives <= 0) {
+                gameOver = true; showOverlay("SISTEMA CORROMPIDO", "#ff3333");
+            } else {
+                loadLevel();
+            }
+        }
+
+        function showOverlay(msg, color) {
+            overlayMessage.innerText = msg;
+            overlayMessage.style.color = color;
+            overlay.classList.remove("hidden");
+        }
+
+        function fillRoundRect(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawBackground() {
+            const isLavaLevel = currentLevel >= 3;
+
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            if (isLavaLevel) {
+                bgGrad.addColorStop(0, "#140306");
+                bgGrad.addColorStop(0.55, "#2d0808");
+                bgGrad.addColorStop(1, "#661403");
+            } else {
+                bgGrad.addColorStop(0, "#070b14");
+                bgGrad.addColorStop(0.55, "#0d1629");
+                bgGrad.addColorStop(1, "#142642");
+            }
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < bgTowers.length; i++) {
+                const t = bgTowers[i];
+                const topY = canvas.height - t.h;
+                ctx.fillStyle = isLavaLevel ? "rgba(25, 4, 4, 0.75)" : "rgba(8, 14, 28, 0.75)";
+                ctx.fillRect(t.x, topY, t.w, t.h);
+
+                ctx.strokeStyle = isLavaLevel ? "rgba(255, 70, 20, 0.15)" : "rgba(0, 255, 204, 0.12)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(t.x, topY, t.w, t.h);
+
+                for (let row = topY + 15; row < canvas.height - 30; row += 22) {
+                    const blink = Math.sin(time * 0.4 + i + row) > 0.2;
+                    if (blink) {
+                        ctx.fillStyle = isLavaLevel ? "rgba(255, 110, 30, 0.35)" : "rgba(0, 255, 204, 0.28)";
+                        ctx.fillRect(t.x + 10, row, 6, 3);
+                        ctx.fillRect(t.x + t.w - 16, row, 6, 3);
+                    }
+                }
+            }
+
+            ctx.strokeStyle = isLavaLevel ? "rgba(255, 80, 20, 0.08)" : "rgba(0, 255, 204, 0.06)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 800; i += 40) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 400); ctx.stroke();
+            }
+            for (let j = 0; j < 400; j += 40) {
+                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(800, j); ctx.stroke();
+            }
+
+            for (let p of bgParticles) {
+                p.y -= isLavaLevel ? p.speed * 1.4 : p.speed * 0.6;
+                p.x += Math.sin(time * 0.3 + p.y * 0.05) * 0.3;
+
+                if (p.y < -10) {
+                    p.y = canvas.height + 10;
+                    p.x = Math.random() * canvas.width;
+                }
+
+                if (isLavaLevel) {
+                    ctx.fillStyle = `rgba(255, ${Math.floor(100 + p.alpha * 140)}, 20, ${p.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = `rgba(0, 255, 204, ${p.alpha * 0.7})`;
+                    ctx.fillRect(p.x, p.y, p.size + 1, p.size + 1);
+                }
+            }
+
+            if (isLavaLevel) {
+                const pulseGlow = 0.25 + Math.abs(Math.sin(time * 0.4)) * 0.15;
+                const lavaGlow = ctx.createLinearGradient(0, 300, 0, 400);
+                lavaGlow.addColorStop(0, "rgba(255, 60, 0, 0)");
+                lavaGlow.addColorStop(1, `rgba(255, 80, 0, ${pulseGlow})`);
+                ctx.fillStyle = lavaGlow;
+                ctx.fillRect(0, 300, canvas.width, 100);
+            }
+        }
+
+        function drawPlayer() {
+            const cx = player.x + player.w / 2;
+            const bottomY = player.y + player.h;
+            const dir = player.facingRight ? 1 : -1;
+            const isMoving = Math.abs(player.vx) > 0.1;
+            const runCycle = isMoving ? time * 2.8 : 0;
+
+            const bob = player.grounded
+                ? (isMoving ? Math.abs(Math.sin(runCycle)) * 2 : Math.sin(time * 0.8) * 0.8)
+                : 0;
+
+            const torsoBottom = bottomY - 5 - bob;
+            const torsoTop = torsoBottom - 10;
+            const headBottom = torsoTop + 2;
+            const headTop = headBottom - 15;
+
+            const scarfWave = Math.sin(time * 2.2) * 2.5;
+            const scarfLen = isMoving ? 13 : 8;
+            ctx.fillStyle = "#ff4d6d";
+            ctx.beginPath();
+            ctx.moveTo(cx - dir * 3, torsoTop + 2);
+            ctx.quadraticCurveTo(
+                cx - dir * (scarfLen * 0.6), torsoTop - 1 + scarfWave,
+                cx - dir * scarfLen, torsoTop + 5 + scarfWave
+            );
+            ctx.lineTo(cx - dir * (scarfLen - 2), torsoTop + 8 + scarfWave);
+            ctx.quadraticCurveTo(
+                cx - dir * (scarfLen * 0.5), torsoTop + 3 + scarfWave,
+                cx - dir * 2, torsoTop + 5
+            );
+            ctx.closePath();
+            ctx.fill();
+
+            const backArmSwing = !player.grounded ? -5 : (isMoving ? -Math.sin(runCycle) * 4 : 0);
+            ctx.fillStyle = "#d9e2ec";
+            fillRoundRect(cx + dir * 2 - 2, torsoTop + 2 + backArmSwing * 0.3, 4, 6, 2);
+
+            const legSwing = player.grounded ? (isMoving ? Math.sin(runCycle) * 4 : 0) : 3;
+            const leftLift = player.grounded && isMoving ? Math.max(0, Math.cos(runCycle)) * 2.5 : 0;
+            const rightLift = player.grounded && isMoving ? Math.max(0, -Math.cos(runCycle)) * 2.5 : (player.grounded ? 0 : 2);
+
+            ctx.fillStyle = "#2b2d42";
+            fillRoundRect(cx - 6 - legSwing, bottomY - 5 - leftLift, 5.5, 5, 2);
+            ctx.fillStyle = "#ffd166";
+            ctx.fillRect(cx - 6 - legSwing + (dir > 0 ? 3 : 0), bottomY - 2 - leftLift, 2.5, 2);
+
+            ctx.fillStyle = "#2b2d42";
+            fillRoundRect(cx + 0.5 + legSwing, bottomY - 5 - rightLift, 5.5, 5, 2);
+            ctx.fillStyle = "#ffd166";
+            ctx.fillRect(cx + 0.5 + legSwing + (dir > 0 ? 3 : 0), bottomY - 2 - rightLift, 2.5, 2);
+
+            ctx.fillStyle = "#ffffff";
+            fillRoundRect(cx - 7, torsoTop, 14, 11, 4);
+
+            ctx.fillStyle = "#ff4d6d";
+            fillRoundRect(cx - 7.5, torsoTop - 1, 15, 3.5, 1.5);
+
+            const earTilt = isMoving ? -dir * 2.5 : Math.sin(time * 0.8) * 0.6;
+            ctx.fillStyle = "#ffffff";
+            fillRoundRect(cx - 6.5 + earTilt * 0.5, headTop - 6, 4.5, 8, 2.2);
+            ctx.fillStyle = "#ff8fa3";
+            fillRoundRect(cx - 5.3 + earTilt * 0.5, headTop - 4.5, 2.2, 5, 1);
+
+            ctx.fillStyle = "#ffffff";
+            fillRoundRect(cx + 2 + earTilt * 0.5, headTop - 6, 4.5, 8, 2.2);
+            ctx.fillStyle = "#ff8fa3";
+            fillRoundRect(cx + 3.1 + earTilt * 0.5, headTop - 4.5, 2.2, 5, 1);
+
+            ctx.fillStyle = "#ffffff";
+            fillRoundRect(cx - 9.5, headTop, 19, 15, 7);
+            ctx.strokeStyle = "#bde0fe";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            const faceCenterX = cx + dir * 1.5;
+            ctx.fillStyle = "#ffe5d9";
+            fillRoundRect(faceCenterX - 6.5, headTop + 3.5, 13, 10, 4.5);
+
+            const isBlinking = Math.sin(time * 0.35) > 0.96;
+            const leftEyeX = faceCenterX - 4.2 + dir * 0.8;
+            const rightEyeX = faceCenterX + 1.8 + dir * 0.8;
+            const eyeY = headTop + 6;
+
+            if (isBlinking) {
+                ctx.fillStyle = "#1a1a2e";
+                ctx.fillRect(leftEyeX, eyeY + 2, 2.6, 1.2);
+                ctx.fillRect(rightEyeX, eyeY + 2, 2.6, 1.2);
+            } else {
+                ctx.fillStyle = "#1a1a2e";
+                fillRoundRect(leftEyeX, eyeY, 2.6, 4.2, 1.2);
+                fillRoundRect(rightEyeX, eyeY, 2.6, 4.2, 1.2);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(leftEyeX + 0.5, eyeY + 0.6, 1.2, 1.2);
+                ctx.fillRect(rightEyeX + 0.5, eyeY + 0.6, 1.2, 1.2);
+            }
+
+            ctx.fillStyle = "#ff758f";
+            ctx.fillRect(leftEyeX - 1.2, eyeY + 4.3, 2.2, 1.3);
+            ctx.fillRect(rightEyeX + 1.6, eyeY + 4.3, 2.2, 1.3);
+
+            const frontArmSwing = !player.grounded ? -6 : (isMoving ? Math.sin(runCycle) * 4 : 0);
+            ctx.fillStyle = "#ffffff";
+            fillRoundRect(cx - dir * 2 - 2, torsoTop + 2 + frontArmSwing * 0.3, 4.2, 6, 2);
+            ctx.fillStyle = "#ff4d6d";
+            fillRoundRect(cx - dir * 2 - 2, torsoTop + 6 + frontArmSwing * 0.3, 4.2, 2.5, 1.2);
+        }
+
+        function draw() {
+            drawBackground();
+
+            let isPortalOpen = (coinsCollected === coinsTotal);
+            ctx.fillStyle = isPortalOpen ? "#00ffcc" : "#662222";
+            ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
+            if (isPortalOpen) {
+                ctx.strokeStyle = "white"; ctx.lineWidth = 2;
+                ctx.strokeRect(goal.x + Math.sin(time) * 5, goal.y, goal.w, goal.h);
+            }
+
+            for (let p of platforms) {
+                ctx.fillStyle = "#2b2b36"; ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = currentLevel >= 3 ? "#ff8833" : "#00ffcc";
+                ctx.fillRect(p.x, p.y, p.w, 3);
+            }
+
+            for (let c of coins) {
+                if (!c.collected) {
+                    let pulse = Math.abs(Math.sin(time)) * 3;
+                    ctx.fillStyle = "gold";
+                    ctx.beginPath();
+                    ctx.arc(c.x + c.w/2, c.y + c.h/2, (c.w/2) + pulse, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.arc(c.x + c.w/2, c.y + c.h/2, c.w/4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            ctx.fillStyle = "#ff3333";
+            for (let e of enemies) {
+                ctx.fillRect(e.x, e.y, e.w, e.h);
+                ctx.strokeStyle = "black"; ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + e.w, e.y + e.h);
+                ctx.moveTo(e.x + e.w, e.y); ctx.lineTo(e.x, e.y + e.h);
+                ctx.stroke();
+            }
+
+            drawPlayer();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            if (!gameOver && !gameWon) {
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        restartBtn.addEventListener("click", () => {
+            score = 0; lives = 3; currentLevel = 0;
+            gameOver = false; gameWon = false;
+            overlay.classList.add("hidden");
+            loadLevel();
+            cancelAnimationFrame(animationId);
+            gameLoop();
+        });
+
+        loadLevel();
+        gameLoop();
+    </script>
+</body>
+</html>
