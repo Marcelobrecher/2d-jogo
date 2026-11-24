@@ -126,7 +126,7 @@
             },
             { // FASE 2: Buracos e primeiros bugs
                 start: { x: 20, y: 300 }, goal: { x: 720, y: 150, w: 40, h: 50 },
-                platforms: [ { x: 0, y: 380, w: 200, h: 20 }, { x: 300, y: 380, w: 200, h: 20 }, { x: 550, y: 280, w: 100, h: 10 }, { x: 680, y: 200, w: 120, h: 10 } ],
+                platforms: [ { x: 0, y: 380, w: 200, h: 20 }, { x: 300, y: 380, w: 200, h: 20 }, { x: 550, y: 290, w: 100, h: 10 }, { x: 680, y: 200, w: 120, h: 10 } ],
                 coins: [ { x: 150, y: 350, w: 15, h: 15 }, { x: 350, y: 350, w: 15, h: 15 }, { x: 600, y: 250, w: 15, h: 15 } ],
                 enemies: [ { x: 400, y: 360, w: 20, h: 20 } ]
             },
@@ -193,18 +193,38 @@
                 player.grounded = false;
             }
 
-            player.vy += player.gravity;
+            // 1. Aplica movimento horizontal (Eixo X)
             player.x += player.vx;
-            player.y += player.vy;
 
             if (player.x < 0) player.x = 0;
             if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 
-            player.grounded = false;
+            // Verifica colisões laterais (Paredes dos blocos)
             for (let p of platforms) {
                 if (checkCollision(player, p)) {
-                    if (player.vy > 0 && player.y + player.h - player.vy <= p.y) {
-                        player.grounded = true; player.vy = 0; player.y = p.y - player.h;
+                    if (player.vx > 0) {
+                        player.x = p.x - player.w;
+                    } else if (player.vx < 0) {
+                        player.x = p.x + p.w;
+                    }
+                }
+            }
+
+            // 2. Aplica gravidade e movimento vertical (Eixo Y)
+            player.vy += player.gravity;
+            player.y += player.vy;
+            player.grounded = false;
+
+            // Verifica colisões de teto e chão dos blocos
+            for (let p of platforms) {
+                if (checkCollision(player, p)) {
+                    if (player.vy > 0) {
+                        player.grounded = true;
+                        player.vy = 0;
+                        player.y = p.y - player.h;
+                    } else if (player.vy < 0) {
+                        player.vy = 0;
+                        player.y = p.y + p.h;
                     }
                 }
             }
