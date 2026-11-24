@@ -95,12 +95,32 @@
         let animationId;
         let time = 0; // Usado para animações (pulsar)
 
+        // Partículas do Cenário (Dados flutuantes / Brasas de lava)
+        const bgParticles = Array.from({ length: 45 }, () => ({
+            x: Math.random() * 800,
+            y: Math.random() * 400,
+            size: Math.random() * 3 + 1,
+            speed: Math.random() * 1.2 + 0.4,
+            alpha: Math.random() * 0.6 + 0.2
+        }));
+
+        // Torres de fundo para dar profundidade ao cenário
+        const bgTowers = [
+            { x: 30, w: 70, h: 210 },
+            { x: 130, w: 50, h: 150 },
+            { x: 220, w: 90, h: 260 },
+            { x: 360, w: 60, h: 180 },
+            { x: 470, w: 100, h: 240 },
+            { x: 610, w: 55, h: 160 },
+            { x: 700, w: 80, h: 230 }
+        ];
+
         // Jogador
         const player = {
             x: 0, y: 0, w: 20, h: 20,
             speed: 5, vx: 0, vy: 0,
             jumpPower: -10, gravity: 0.5, grounded: false,
-            facingRight: true // Para desenhar o olhinho
+            facingRight: true
         };
 
         const keys = { right: false, left: false, up: false };
@@ -136,13 +156,13 @@
                 coins: [ { x: 290, y: 170, w: 15, h: 15 }, { x: 540, y: 220, w: 15, h: 15 }, { x: 240, y: 290, w: 15, h: 15 } ],
                 enemies: [ { x: 50, y: 130, w: 20, h: 20 } ]
             },
-            { // FASE 4: Chão minado
+            { // FASE 4: Chão minado (Lava)
                 start: { x: 20, y: 300 }, goal: { x: 740, y: 50, w: 40, h: 50 },
                 platforms: [ { x: 0, y: 380, w: 100, h: 20 }, { x: 150, y: 300, w: 50, h: 10 }, { x: 250, y: 230, w: 50, h: 10 }, { x: 400, y: 180, w: 100, h: 10 }, { x: 550, y: 120, w: 50, h: 10 }, { x: 680, y: 100, w: 120, h: 10 } ],
                 coins: [ { x: 165, y: 270, w: 15, h: 15 }, { x: 265, y: 200, w: 15, h: 15 }, { x: 440, y: 150, w: 15, h: 15 } ],
-                enemies: [ { x: 100, y: 380, w: 800, h: 20 } ] // Chão inteiro de lava/bug
+                enemies: [ { x: 100, y: 380, w: 800, h: 20 } ]
             },
-            { // FASE 5: O Núcleo do Sistema
+            { // FASE 5: O Núcleo do Sistema (Lava)
                 start: { x: 20, y: 300 }, goal: { x: 380, y: 60, w: 40, h: 50 },
                 platforms: [ { x: 0, y: 380, w: 100, h: 20 }, { x: 150, y: 320, w: 60, h: 10 }, { x: 300, y: 320, w: 60, h: 10 }, { x: 450, y: 320, w: 60, h: 10 }, { x: 600, y: 320, w: 60, h: 10 }, { x: 700, y: 220, w: 80, h: 10 }, { x: 500, y: 150, w: 80, h: 10 }, { x: 350, y: 110, w: 100, h: 10 } ],
                 coins: [ { x: 170, y: 290, w: 15, h: 15 }, { x: 320, y: 290, w: 15, h: 15 }, { x: 470, y: 290, w: 15, h: 15 }, { x: 620, y: 290, w: 15, h: 15 }, { x: 730, y: 190, w: 15, h: 15 } ],
@@ -157,7 +177,6 @@
             player.x = data.start.x; player.y = data.start.y;
             player.vx = 0; player.vy = 0;
             
-            // Clonando os dados para não alterar o original
             platforms = JSON.parse(JSON.stringify(data.platforms));
             coins = JSON.parse(JSON.stringify(data.coins)).map(c => ({...c, collected: false}));
             enemies = JSON.parse(JSON.stringify(data.enemies));
@@ -193,13 +212,12 @@
                 player.grounded = false;
             }
 
-            // 1. Aplica movimento horizontal (Eixo X)
+            // 1. Movimento horizontal (Eixo X)
             player.x += player.vx;
 
             if (player.x < 0) player.x = 0;
             if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 
-            // Verifica colisões laterais (Paredes dos blocos)
             for (let p of platforms) {
                 if (checkCollision(player, p)) {
                     if (player.vx > 0) {
@@ -210,12 +228,11 @@
                 }
             }
 
-            // 2. Aplica gravidade e movimento vertical (Eixo Y)
+            // 2. Gravidade e movimento vertical (Eixo Y)
             player.vy += player.gravity;
             player.y += player.vy;
             player.grounded = false;
 
-            // Verifica colisões de teto e chão dos blocos
             for (let p of platforms) {
                 if (checkCollision(player, p)) {
                     if (player.vy > 0) {
@@ -255,7 +272,7 @@
             if (lives <= 0) {
                 gameOver = true; showOverlay("SISTEMA CORROMPIDO", "#ff3333");
             } else {
-                loadLevel(); // Reinicia a fase atual
+                loadLevel();
             }
         }
 
@@ -265,31 +282,106 @@
             overlay.classList.remove("hidden");
         }
 
-        function draw() {
-            // Fundo escuro
-            ctx.fillStyle = "#111122";
+        function drawBackground() {
+            const isLavaLevel = currentLevel >= 3; // Fases 4 e 5 são as fases de lava
+
+            // 1. Gradiente principal do céu/sistema
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            if (isLavaLevel) {
+                bgGrad.addColorStop(0, "#140306");
+                bgGrad.addColorStop(0.55, "#2d0808");
+                bgGrad.addColorStop(1, "#661403");
+            } else {
+                bgGrad.addColorStop(0, "#070b14");
+                bgGrad.addColorStop(0.55, "#0d1629");
+                bgGrad.addColorStop(1, "#142642");
+            }
+            ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Grade Cyberpunk ao fundo
-            ctx.strokeStyle = "rgba(0, 255, 204, 0.05)";
-            for(let i=0; i<800; i+=40) {
-                ctx.strokeRect(i, 0, 1, 400); ctx.strokeRect(0, i, 800, 1);
+            // 2. Silhuetas de servidores/estruturas ao fundo
+            for (let i = 0; i < bgTowers.length; i++) {
+                const t = bgTowers[i];
+                const topY = canvas.height - t.h;
+                ctx.fillStyle = isLavaLevel ? "rgba(25, 4, 4, 0.75)" : "rgba(8, 14, 28, 0.75)";
+                ctx.fillRect(t.x, topY, t.w, t.h);
+
+                // Borda sutil nas torres
+                ctx.strokeStyle = isLavaLevel ? "rgba(255, 70, 20, 0.15)" : "rgba(0, 255, 204, 0.12)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(t.x, topY, t.w, t.h);
+
+                // Luzes / LEDs piscando nas torres
+                for (let row = topY + 15; row < canvas.height - 30; row += 22) {
+                    const blink = Math.sin(time * 0.4 + i + row) > 0.2;
+                    if (blink) {
+                        ctx.fillStyle = isLavaLevel ? "rgba(255, 110, 30, 0.35)" : "rgba(0, 255, 204, 0.28)";
+                        ctx.fillRect(t.x + 10, row, 6, 3);
+                        ctx.fillRect(t.x + t.w - 16, row, 6, 3);
+                    }
+                }
             }
+
+            // 3. Grade Cyberpunk ao fundo
+            ctx.strokeStyle = isLavaLevel ? "rgba(255, 80, 20, 0.08)" : "rgba(0, 255, 204, 0.06)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 800; i += 40) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 400); ctx.stroke();
+            }
+            for (let j = 0; j < 400; j += 40) {
+                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(800, j); ctx.stroke();
+            }
+
+            // 4. Partículas animadas (Brasas subindo na lava ou Dados flutuando nas fases normais)
+            for (let p of bgParticles) {
+                p.y -= isLavaLevel ? p.speed * 1.4 : p.speed * 0.6;
+                p.x += Math.sin(time * 0.3 + p.y * 0.05) * 0.3;
+
+                if (p.y < -10) {
+                    p.y = canvas.height + 10;
+                    p.x = Math.random() * canvas.width;
+                }
+
+                if (isLavaLevel) {
+                    ctx.fillStyle = `rgba(255, ${Math.floor(100 + p.alpha * 140)}, 20, ${p.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = `rgba(0, 255, 204, ${p.alpha * 0.7})`;
+                    ctx.fillRect(p.x, p.y, p.size + 1, p.size + 1);
+                }
+            }
+
+            // 5. Brilho de calor vindo da lava na parte inferior (apenas Fases 4 e 5)
+            if (isLavaLevel) {
+                const pulseGlow = 0.25 + Math.abs(Math.sin(time * 0.4)) * 0.15;
+                const lavaGlow = ctx.createLinearGradient(0, 300, 0, 400);
+                lavaGlow.addColorStop(0, "rgba(255, 60, 0, 0)");
+                lavaGlow.addColorStop(1, `rgba(255, 80, 0, ${pulseGlow})`);
+                ctx.fillStyle = lavaGlow;
+                ctx.fillRect(0, 300, canvas.width, 100);
+            }
+        }
+
+        function draw() {
+            // Desenha o cenário dinâmico
+            drawBackground();
 
             // Portal
             let isPortalOpen = (coinsCollected === coinsTotal);
             ctx.fillStyle = isPortalOpen ? "#00ffcc" : "#662222";
             ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
-            // Brilho do portal
-            if(isPortalOpen) {
+            if (isPortalOpen) {
                 ctx.strokeStyle = "white"; ctx.lineWidth = 2;
-                ctx.strokeRect(goal.x + Math.sin(time)*5, goal.y, goal.w, goal.h);
+                ctx.strokeRect(goal.x + Math.sin(time) * 5, goal.y, goal.w, goal.h);
             }
 
             // Plataformas
             for (let p of platforms) {
-                ctx.fillStyle = "#333"; ctx.fillRect(p.x, p.y, p.w, p.h);
-                ctx.fillStyle = "#00ffcc"; ctx.fillRect(p.x, p.y, p.w, 3); // Borda neon cima
+                ctx.fillStyle = "#2b2b36"; ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = currentLevel >= 3 ? "#ff8833" : "#00ffcc";
+                ctx.fillRect(p.x, p.y, p.w, 3);
             }
 
             // Moedas (Pulsando)
@@ -307,11 +399,10 @@
                 }
             }
 
-            // Bugs (Inimigos)
+            // Bugs / Lava (Inimigos)
             ctx.fillStyle = "#ff3333";
             for (let e of enemies) {
                 ctx.fillRect(e.x, e.y, e.w, e.h);
-                // Desenha um "X" preto
                 ctx.strokeStyle = "black"; ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + e.w, e.y + e.h);
@@ -322,7 +413,8 @@
             // Jogador (Byte)
             ctx.fillStyle = "#0088ff";
             ctx.fillRect(player.x, player.y, player.w, player.h);
-            ctx.fillStyle = "cyan"; // Borda neon
+            ctx.strokeStyle = "cyan";
+            ctx.lineWidth = 1.5;
             ctx.strokeRect(player.x, player.y, player.w, player.h);
             
             // "Olhinho" do jogador
