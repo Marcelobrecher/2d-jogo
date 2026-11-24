@@ -6,7 +6,7 @@
     <title>A Jornada do Byte - V2.0</title>
     
     <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background-color: #0d0d1a;
             color: white;
@@ -126,8 +126,7 @@
             },
             { // FASE 2: Buracos e primeiros bugs
                 start: { x: 20, y: 300 }, goal: { x: 720, y: 150, w: 40, h: 50 },
-                // CORREÇÃO: O 3º bloco estava em y: 280, alterado para y: 310 para permitir o salto correto
-                platforms: [ { x: 0, y: 380, w: 200, h: 20 }, { x: 300, y: 380, w: 200, h: 20 }, { x: 550, y: 310, w: 100, h: 10 }, { x: 680, y: 200, w: 120, h: 10 } ],
+                platforms: [ { x: 0, y: 380, w: 200, h: 20 }, { x: 300, y: 380, w: 200, h: 20 }, { x: 550, y: 280, w: 100, h: 10 }, { x: 680, y: 200, w: 120, h: 10 } ],
                 coins: [ { x: 150, y: 350, w: 15, h: 15 }, { x: 350, y: 350, w: 15, h: 15 }, { x: 600, y: 250, w: 15, h: 15 } ],
                 enemies: [ { x: 400, y: 360, w: 20, h: 20 } ]
             },
